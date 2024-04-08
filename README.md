@@ -18,32 +18,39 @@ The primary goal of this lab is to become more comfortable in a Security Operati
 - Wazuh (SIEM)
 - Sysmon
 - TheHive
-- Shuffle.io
+- Shuffle Automation
 - Mimikatz
 - DigitalOcean
 - VirusTotal
   
 ## General Knowledge
-Before we begin I will give a litle background on Splunk, Splunk Universal Fowarder, Sysmon, and Atomic Red Team.
+Before we begin I will give a litle background on Wazuh, Shuffle Automation, Sysmon, VirusTotal, DigitalOcean, Mimikatz, and TheHive.
 <br>
 <br>
-Splunk is a leading SIEM (Security Information and Event Management) platform that helps organizations monitor, analyze, and respond to security events and incidents in real-time. It's commonly referred to as a "Data-to-Everything" platform because it enables organizations to gain insights from a wide range of data sources, including logs, events, metrics, sensors, and more.
+Wazuh is a open-source SIEM (Security Information and Event Management) platform that helps detect, respond to, and manage security threats across their IT infrastructure.
 <br>
 <br>
-Splunk Universal Forwarder is a lightweight tool that collects data from various sources such as enpoinds and sends it to a Splunk deployment for indexing and analysis.
+Shuffle Automation is an open-source SOAR solution that can provide many automation services, such as EDR to tickets, automated data enrichment, and responsive capabilities.
 <br>
 <br>
 Sysmon, short for System Monitor, is a Windows system service and device driver developed by Microsoft. It provides advanced logging and monitoring capabilities to help detect and investigate suspicious or malicious activity on Windows systems.
 <br>
 <br>
-Atomic Red Team is a framework for simulating both offensive and defensive tactics in cybersecurity. It provides a collection of small, discrete tests called "atomic tests" that simulate specific adversary behaviors or techniques. These tests help organizations evaluate their security controls, detection capabilities, and incident response procedures in a controlled environment.
+VirusTotal is a free online service that analyzes files and URLs to identify malware and other security threats. It aggregates multiple antivirus engines and various scanning tools to provide users with comprehensive insights into the safety of files and websites.
 <br>
 <br>
+DigitalOcean is a cloud infrastructure provider that offers cloud computing services to help developers deploy, manage, and scale applications more easily.
+<br>
+<br>
+Mimikatz is a cybersecurity tool used by both ethical hackers and malicious actors to retrieve sensitive data, especially passwords, from computer systems. 
+<br>
+<br>
+TheHive is an open-source security incident response platform designed to help organizations manage and analyze security incidents efficiently.
 ## Lab Logial Diagram:
-![AD - Logical Diagram](https://github.com/MarcPayz/Detection-Monitoring-Lab/assets/163923336/1bd386e0-b6e2-468a-96b8-e77d27d15001)
+![Screenshot 2024-04-07 214321](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/de3c55ac-83af-4dae-9d12-fbb7f6804622)
 
-This is the logical diagram of the lab environment. I will utilize four operating systems, including a Windows 10 virtual machine (VM) designated as the target machine. The target VM will have Sysmon and Splunk Universal Forwarder installed to forward various telemetry to Splunk. Additionally, Atomic Red Team will be installed on the target VM to simulate additional adversary attacks.<br> <br> The second operating system will be Windows Server 2022, which will utilize Active Directory Domain Services to organize users into different organizational units (OUs), simulating a real enterprise environment. Windows Server 2022 will also have Sysmon and Splunk Universal Forwarder installed to send telemetry to Splunk in case it becomes a target of adversaries. <br><br> The third operating system will be Ubuntu, which will host our Splunk server running on port 8000. Lastly, Kali Linux OS will serve as the attacker's operating system. <br><br> All vm's will be on the same local network which will be 192.168.10.0/24.
+This is the logical diagram of the lab environment. I will utilize three operating systems, including a Windows 10 virtual machine (VM) designated as the client and two Ubuntu machines that reside in the cloud. The Windows 10 client will have Sysmon and the Wazuh agent installed for telemetry enrichment. The two Ubuntu machines will be deployed from DigitalOcean, with one hosting a Wazuh server and the other hosting TheHive.
 <br>
 <br>
-
+The Windows 10 client will send all events to the Wazuh manager over the internet. Alerts from the Wazuh Manager will be sent to Shuffle.io, which will enrich IOCs with the assistance of Virustotal. Additionally, Shuffle will forward that data to TheHive for case management and send an email to the SOC analyst to initialize incident response.
 ## Steps
