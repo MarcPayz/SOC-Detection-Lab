@@ -53,4 +53,24 @@ This is the logical diagram of the lab environment. I will utilize three operati
 <br>
 <br>
 The Windows 10 client will send all events to the Wazuh manager over the internet. Alerts from the Wazuh Manager will be sent to Shuffle.io, which will enrich IOCs with the assistance of Virustotal. Additionally, Shuffle will forward that data to TheHive for case management and send an email to the SOC analyst to initialize incident response.
+
+<br>
+<br>
+
+
 ## Steps
+I already had a Windows 10 Pro VM deployed on VirtualBox. It already had Sysmon installed from previous labs, and I will utilize it for this lab.
+
+<br>
+
+Ref 1: Creating Droplets on DigitalOcean:
+![Creating Droplets](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/086a5013-76e3-4f5b-90a2-531744994a74)
+Stating on DigitalOcean, I will create a droplet which is basically a virtual machine (vm). I will select Ubuntu version 22.04, basic shared CPU and Premium intel NVme SSD. I selected the premium Intel option so I'm able to select specifically 8 GB/2 intel CPUs. I chose that because for Wazuh manager, it's recommended to have at least 4GB of ram and 2vCPU.
+
+<br>
+<br>
+
+
+
+
+
