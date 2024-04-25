@@ -397,6 +397,14 @@ If we examine the 'data.win.eventdata.image', we can see that the user Marc exec
 <br>
 Now, I will use Shuffle.io to automatically send that alert to TheHive for alert/case management and gather additional information about Mimikatz by leveraging VirusTotal for OSINT. Finally, I will send an email to the SOC analyst to inform them that Mimikatz was detected on a workstation.
 
+<br>
+<br>
+<br>
+
+
+
+
+
 
 
 
