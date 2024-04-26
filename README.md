@@ -395,11 +395,235 @@ If we examine the 'data.win.eventdata.image', we can see that the user Marc exec
 <br>
 <br>
 <br>
-Now, I will use Shuffle.io to automatically send that alert to TheHive for alert/case management and gather additional information about Mimikatz by leveraging VirusTotal for OSINT. Finally, I will send an email to the SOC analyst to inform them that Mimikatz was detected on a workstation.
+Now, I will utilize Shuffle.io to automatically send Mimikatz alerts to Shuffle. Shuffle will then extract the SHA256 hash from the Mimikatz file to check its reputation score with VirusTotal and forward those details to TheHive. Subsequently, TheHive will create an alert, which will trigger an email notification to the SOC analyst, informing them that Mimikatz was detected on a workstation and prompting them to commence an investigation.
+<br>
+<br>
+<br>
+
+Ref 35: Adding a Webhook and configuring Shuffle workflow:
+![Webhook](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/2005fdc3-c1c1-4227-9b6b-25291ff2c7ef)
+The Red arrow shows me adding a Webhook which I renamed to 'Wazuh-Alerts', and this will foward any alerts from Wazuh into this automated workflow. As for the second icon, it was already there by default and it's role is to 'control a workflow'. For it to be able to do that, I configured the call to '$exec'. 
 
 <br>
 <br>
 <br>
+
+Ref 36: Editing Wazuh manager ossec configuration file:
+![Conf file wazuh](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/2abeb9d6-6d3b-44d8-bc25-a913c90c71a5)
+Now I need to tell Wazuh manager CLI that we're going to connect to Shuffle and this is done by adding an 'intergration' tag in the ossec configuration file. By utilizing the command 'nano /var/ossec/etc/ossec.conf', I enter the configuration file, and I added the intergration tag circled in red. <br><br>The <hook_url> is the URL I copied from Shuffle, and I just pasted it here. As for the configuration of '<rule_id>100002></rule_id>, this means the rule ID I created for detecting Mimikatz on Wazuh, the alert will be sent out to Shuffle. Now I will save it and restart the Wazuh manager service.
+
+<br>
+<br>
+<br>
+
+Next I headed over to my windows 10 vm, and I executed Mimikatz again to generate another alert on Wazuh to see if the alert was sent over to Shuffle. 
+
+<br>
+<br>
+
+
+Ref 37: Shuffle receiving Wazuh alerts:
+![Alerts recieved](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/bc727d4f-6a49-4214-8a21-941ade020237)
+Heading over to Shuffle and running the execution, you can see that the status was a success. The alert from detecting Mimikatz by Wazuh was forwarded to Shuffle. I can see various pieces of information such as the computer name, the service that collected the log on the Windows machine (which was Sysmon), and the alert name 'Mimikatz Usage Detected'.
+
+<br>
+<br>
+<br>
+
+Ref 38: Setting up Regex:
+![Regex](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/ad6c2cc2-dd48-4d27-8335-b2fabd271d78)
+To start the process of extracting the SHA256 hash from the mimikatz file, I need to change the configuration to the shuffle tool. For 'Find Actions', I selected it to 'Regex capture group'. For the 'Input data', I selected the execution Argument to be '$exe,akk_fields.data.win.eventdata.hashes' option meaning it's going to select the mimikatz file hash from the alerts generated from Wazuh. <br><br>Now as for writing the actual Regex, I utilized chatgpt because I'm not sure how to write my own regex. Using chatgpt, I asked it to create a regex to parse the SHA256  value of the hash and I provided the hash of mimikatz. Chatgpt created a regex for me and I copied it to the shuffle field and I saved and ran the workflow to see if it worked.
+
+<br>
+<br>
+<br>
+
+Ref 39: Results:
+![results](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/ee87f3a5-6234-4359-960c-3a5f31c624c9)
+As you can see, the status was a success and the SHA256 hash of Mimikatz was successfully extracted.
+
+<br>
+<br>
+<br>
+
+Ref 40: Adding VirusTotal:
+![VirusTotal](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/6b8902ec-d65b-4269-a363-4b566d5df2ee)
+To add VirusTotal, I searched for it in the search box and dragged it into my workflow. To configure it, I selected the action 'Get a hash report,' indicating that it will receive the hash and provide me with a report, including reputation scores, etc. For the 'id,' I selected the regex output, which parses out the value of the hash. Now I save and run the workflow to see the results.
+
+<br>
+<br>
+<br>
+Ref 41: VirusTotal Results:
+
+![Virustotal results](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/1a9adc61-701e-43da-8c87-3e92e5c6b571)
+When reviewing the results of sending the Mimikatz SHA256 hash value to VirusTotal for a report, you can observe various pieces of information. For example, 64 scanners report Mimikatz as malicious, and you can also view other details such as the file reputation, which is -2.
+
+<br>
+<br>
+<br>
+Before I add in TheHive into my suffle workflow, I will head over towards TheHive and configure some things.
+
+<br>
+<br>
+<br>
+
+Ref 32: Adding a new organization:
+![org](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/fe92122c-4a26-4e67-bf6e-1c304eca0ad6)
+The first action I took after authenticating to TheHive was adding a new organization. The default organization already present was 'admin,' and the red circle indicates the organization I added, named 'MPayz'
+
+<br>
+<br>
+<br>
+Ref 33: Adding Users:
+
+![service](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/d5e6bad9-f0ae-4ced-a8f9-1290deb49111)
+The second action was adding new users within the MPayz organization. I added a user named 'MPayz' with the login 'mpayz@test.com,' assigning a normal account type. Additionally, I added another user named 'SOAR' with the login 'shuffle@test.com,' intended for Shuffle usage, and set this account type as a service account.
+
+<br>
+<br>
+Returning to Shuffle.io, I added TheHive application to my workflow to initiate configuration for Shuffle to communicate with TheHive.
+
+<br>
+<br>
+<br>
+
+Ref 34: Configuring Authentication for TheHive:
+![authentication](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/77a67847-0edd-4d9a-9c87-37e4daa64edd)
+"Before Shuffle can send any data to TheHive, it needs to authenticate, similar to how I did. That's why I created a user named 'SOAR' on TheHive, allowing Shuffle to authenticate with that account for communication between the two platforms. I obtained the API key during the creation of the SOAR user account on TheHive and pasted it here. Additionally, the URL is TheHive's public IP address, which is '143.198.18.216:9000'.
+
+<br>
+<br>
+<br>
+
+Ref 35: Configuring TheHive app on Shuffle:
+![first conf](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/b3fa3def-2672-4ce9-b9a1-635d98a88265)
+Going over the configurations I've made: I set the sourceref to the Mimikatz rule I've made meaning TheHive will recieve any data relating towards that rule. The source I set it to Wazuh. As for the description I wrote, "Mimikatz Detected on", and I set the data field to the name of the host and I have another field for the user. For the date, I've set the data filed to the date which will be UTC time. <br><br> 
+
+Ref 36: Configuring TheHive app on Shuffle pt2:
+![second conf](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/a62c678c-267e-4bbe-97b2-86379aa45b5d)
+As for the Title, I selected the data field '$exec.title'. Although I could have simply entered 'Mimikatz Detected' as the title, I opted for the dynamic field name to ensure that any changes made to the alert name in Wazuh would automatically reflect here. Regarding the tags, I set them to the MITRE ID 'T1003', denoting credential dumping, which is characteristic of Mimikatz. For the summary, I wrote 'Mimikatz activity detected on' and included various data fields such as the host, process ID, and command-line execution.
+
+<br>
+<br>
+<br>
+Ref 37: Output Preview:
+
+![output](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/82059521-3f30-4bb5-845b-7a4cab457ac6)
+When examining the expected output, you'll notice it displays 'Mimikatz activity detected', followed by the hostname of my Windows 10 VM, the process ID, and the command line execution that triggered the detection, indicated as 'DidItWork', which is the modified name I used in place of 'Mimikatz'.
+
+<br>
+<br>
+<br>
+
+Before executing the entire workflow, I made a modification to my cloud firewall to allow all inbound IPs on port 9000. This adjustment is essential because it's where TheHive instance resides. Without this modification, TheHive wouldn't be able to receive any alerts automated by Shuffle. 
+
+<br>
+<br>
+<br>
+Ref 38: Almost complete workflow:
+
+![Almost complete Workflow](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/37e771a7-855a-4d01-ac05-ce1179e15cec)
+Now to execute the entire workflow I've constructed so far. As indicated by the red circles, all components were successful. This means that the alerts from Wazuh and the SHA256 hash value will be forwarded to VirusTotal for additional information related to Mimikatz. Subsequently, all this data will be sent out as an alert on TheHive.
+
+<br>
+<br>
+<br>
+
+Ref 39: Checking TheHive for alerts:
+![Alert](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/44f240be-ffc0-4899-ab3c-3bd677516d2a)
+Switching over to TheHive, we can see a alert was generated saying 'Mimikatz Usage Detected' with the MITRE ID of T1003.
+
+<br>
+<br>
+
+Ref 40: Investigating the Alert:
+![Alerttt](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/8362442e-5bea-4527-9c39-64b6cb60024a)
+After selecting the alert, we can view various pieces of information regarding the security event that occurred. The Description indicates that Mimikatz was detected on the host 'Desktop-R7LU76C', which is my Windows 10 VM, and it provides the name of the user, Marc. In the Summary section, which offers further details about this alert, it shows the process ID and the command-line execution that triggered the alert, running 'DiditWork.exe', which is Mimikatz. <br> <br> Additionally, on the left-hand side, there are further details such as the date this alert was reported (05/04/2024 20:00), the reference it came from (Rule:1000002), and the source that generated the alert (Wazuh). Furthermore, there's the MITRE tag of T1003 and severity level, which is classified as medium, and this information originated from VirusTotal.
+
+<br>
+<br>
+<br>
+The final step is to send out an alert via email to the SOC analyst to initiate their investigation. I accomplished this by creating a Gmail account with the username 'socautolab@gmail.com'. To enable this functionality, I hosted my own SMTP server so Shuffle can send emails as needed. Gmail offers the option to create and host your own SMTP server via port 587, and I utilized their free service for this purpose.
+<br>
+<br>
+<br>
+
+Ref 41: Adding and configuring email to the workflow:
+![email](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/98aa2d9e-f5d5-4593-8c8a-b203fc9682c1)
+Similar to the process for other applications, I searched for 'email' and added it to my workflow, connecting it to VirusTotal. This ensures that any additional information provided by VirusTotal can be included in the email body. <br><br> For the configurations, I set the 'Find Actions' to 'Send email SMTP'. The 'SMTP host' is configured to point to my Gmail server at 'smtp.gmail.com', and I set the port to '587' since secure SMTP operates on that port. <br><br> The recipient is set to my Gmail username at 'socautolab@gmail.com', meaning that email will receive all alerts. For the subject, I set it to 'Mimikatz Detected!!!!!'. Lastly, for the body, I included the time of the event and the name of the host.
+
+<br>
+<br>
+<br>
+Ref 42: Gmail notification:
+
+![Email Generated](https://github.com/MarcPayz/SOC-Detection-Lab/assets/163923336/e44540ca-6838-4f3c-b709-dcec17e987fd)
+I can confirm that the email was successfully generated. The subject line reads 'Mimikatz Detected!!!!!', and it includes the date and time of the event, which occurred on '2024-04-06' at '02:57:51' PM. Additionally, I can see the hostname, which corresponds to my Windows 10 VM.<br><br> This completes the automation.
+
+<br>
+<br>
+
+## Conclusion
+In conclusion, if the original file name of Mimikatz were to be executed on a workstation within an enterprise environment, the process triggers a series of automated actions. Firstly, a log of the event is collected and sent via Sysmon to Wazuh, where an alert is generated. The file's hash is then extracted and sent to VirusTotal to gather additional information, such as severity levels. This information is subsequently forwarded to TheHive as an alert, containing various details from multiple sources, including the user, workstation, and timestamp associated with the security event. Concurrently, an email is sent to the SOC analyst to prompt their investigation and initiate responsive actions.
+
+<br>
+<br>
+
+### Lab Completed
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
