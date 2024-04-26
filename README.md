@@ -567,9 +567,8 @@ I can confirm that the email was successfully generated. The subject line reads 
 In conclusion, if the original file name of Mimikatz were to be executed on a workstation within an enterprise environment, the process triggers a series of automated actions. Firstly, a log of the event is collected and sent via Sysmon to Wazuh, where an alert is generated. The file's hash is then extracted and sent to VirusTotal to gather additional information, such as severity levels. This information is subsequently forwarded to TheHive as an alert, containing various details from multiple sources, including the user, workstation, and timestamp associated with the security event. Concurrently, an email is sent to the SOC analyst to prompt their investigation and initiate responsive actions.
 
 <br>
-<br>
 
-### Lab Completed
+## Lab Completed
 
 
 
